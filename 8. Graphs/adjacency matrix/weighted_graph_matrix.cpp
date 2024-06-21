@@ -7,61 +7,35 @@
 
 using namespace std;
 
-// Struct to represent an edge with weight
-struct Edge {
-    int destination;
-    int weight;
-
-    Edge(int dest, int w) : destination(dest), weight(w) {}
-};
-
 class WeightedGraphMatrix {
 private:
-    vector<vector<Edge*>> adjacencyMatrix;
+    vector<vector<int>> adjacencyMatrix;
     int numVertices;
     bool isDirected;
 
 public:
     // Constructor
     WeightedGraphMatrix(int n, bool directed) : numVertices(n), isDirected(directed) {
-        // Initialize adjacency matrix with nullptrs (no edges initially)
-        adjacencyMatrix.resize(n, vector<Edge*>(n, nullptr));
-    }
-
-    // Destructor to free memory used by edges
-    ~WeightedGraphMatrix() {
-        for (int i = 0; i < numVertices; ++i) {
-            for (int j = 0; j < numVertices; ++j) {
-                delete adjacencyMatrix[i][j];
-            }
+        // Initialize adjacency matrix with INT_MAX (representing no edge initially)
+        adjacencyMatrix.resize(n, vector<int>(n, INT_MAX));
+        for (int i = 0; i < n; ++i) {
+            adjacencyMatrix[i][i] = 0;  // Distance to self is 0
         }
     }
 
     // Add edge to the graph
     void addEdge(int u, int v, int weight) {
-        if (adjacencyMatrix[u][v] == nullptr) {
-            adjacencyMatrix[u][v] = new Edge(v, weight);
-        } else {
-            // Update weight if edge already exists
-            adjacencyMatrix[u][v]->weight = weight;
-        }
+        adjacencyMatrix[u][v] = weight;
         if (!isDirected && u != v) {
-            if (adjacencyMatrix[v][u] == nullptr) {
-                adjacencyMatrix[v][u] = new Edge(u, weight);
-            } else {
-                // Update weight if edge already exists
-                adjacencyMatrix[v][u]->weight = weight;
-            }
+            adjacencyMatrix[v][u] = weight;
         }
     }
 
     // Remove edge from the graph
     void removeEdge(int u, int v) {
-        delete adjacencyMatrix[u][v];
-        adjacencyMatrix[u][v] = nullptr;
+        adjacencyMatrix[u][v] = INT_MAX;
         if (!isDirected) {
-            delete adjacencyMatrix[v][u];
-            adjacencyMatrix[v][u] = nullptr;
+            adjacencyMatrix[v][u] = INT_MAX;
         }
     }
 
@@ -79,10 +53,10 @@ public:
             q.pop();
             traversal.push_back(vertex);
 
-            for (int v = 0; v < numVertices; ++v) {
-                if (adjacencyMatrix[vertex][v] != nullptr && visited.find(v) == visited.end()) {
-                    q.push(v);
-                    visited.insert(v);
+            for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+                if (adjacencyMatrix[vertex][neighbor] != INT_MAX && visited.find(neighbor) == visited.end()) {
+                    q.push(neighbor);
+                    visited.insert(neighbor);
                 }
             }
         }
@@ -103,10 +77,10 @@ public:
             s.pop();
             traversal.push_back(vertex);
 
-            for (int v = 0; v < numVertices; ++v) {
-                if (adjacencyMatrix[vertex][v] != nullptr && visited.find(v) == visited.end()) {
-                    s.push(v);
-                    visited.insert(v);
+            for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+                if (adjacencyMatrix[vertex][neighbor] != INT_MAX && visited.find(neighbor) == visited.end()) {
+                    s.push(neighbor);
+                    visited.insert(neighbor);
                 }
             }
         }
@@ -126,8 +100,22 @@ public:
         for (int i = 0; i < numVertices; ++i) {
             cout << i << ": ";
             for (int j = 0; j < numVertices; ++j) {
-                if (adjacencyMatrix[i][j] != nullptr) {
-                    cout << "(" << adjacencyMatrix[i][j]->destination << "," << adjacencyMatrix[i][j]->weight << ") ";
+                if (adjacencyMatrix[i][j] != INT_MAX && adjacencyMatrix[i][j] != 0) {
+                    cout << "(" << j << "," << adjacencyMatrix[i][j] << ") ";
+                }
+            }
+            cout << endl;
+        }
+    }
+
+    // Display the adjacency matrix
+    void displayMatrix() {
+        for (int i = 0; i < numVertices; ++i) {
+            for (int j = 0; j < numVertices; ++j) {
+                if (adjacencyMatrix[i][j] == INT_MAX) {
+                    cout << "INF ";
+                } else {
+                    cout << adjacencyMatrix[i][j] << " ";
                 }
             }
             cout << endl;
@@ -139,15 +127,37 @@ public:
         return isDirected;
     }
 
+    // Floyd-Warshall Algorithm
+    vector<vector<int>> floydWarshall() {
+        vector<vector<int>> dist = adjacencyMatrix;
+
+        // Ensure the diagonal elements are 0
+        // for (int i = 0; i < numVertices; ++i) {
+        //     dist[i][i] = 0;
+        // }
+
+        for (int intermediate = 0; intermediate < numVertices; ++intermediate) {
+            for (int start = 0; start < numVertices; ++start) {
+                for (int end = 0; end < numVertices; ++end) {
+                    if (dist[start][intermediate] != INT_MAX && dist[intermediate][end] != INT_MAX && dist[start][intermediate] + dist[intermediate][end] < dist[start][end]) {
+                        dist[start][end] = dist[start][intermediate] + dist[intermediate][end];
+                    }
+                }
+            }
+        }
+
+        return dist;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
         visited.insert(vertex);
         traversal.push_back(vertex);
 
-        for (int v = 0; v < numVertices; ++v) {
-            if (adjacencyMatrix[vertex][v] != nullptr && visited.find(v) == visited.end()) {
-                DFSRecHelper(v, visited, traversal);
+        for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+            if (adjacencyMatrix[vertex][neighbor] != INT_MAX && visited.find(neighbor) == visited.end()) {
+                DFSRecHelper(neighbor, visited, traversal);
             }
         }
     }
@@ -241,5 +251,100 @@ int main() {
     cout << "\nDirected Weighted Graph after removing edge (0, 1):" << endl;
     directedGraph.display();
 
+    WeightedGraphMatrix directedGraph2(4, true);
+    directedGraph2.addEdge(0, 1, 8);
+    directedGraph2.addEdge(0, 3, 1);
+    directedGraph2.addEdge(1, 2, 1);
+    directedGraph2.addEdge(3, 1, 2);
+    directedGraph2.addEdge(3, 2, 9);
+    directedGraph2.addEdge(2, 0, 4);
+
+    cout << "\nDirected Weighted Graph:" << endl;
+    directedGraph2.display();
+
+    cout << endl;
+
+    cout << "Directed Weighted Matrix:" << endl;
+    directedGraph2.displayMatrix();
+
+    cout << endl;
+
+    // Floyd-Warshall Algorithm
+    cout << "Floyd-Warshall Algorithm result:" << endl;
+    vector<vector<int>> fwResult = directedGraph2.floydWarshall();
+
+    for (int i = 0; i < fwResult.size(); ++i) {
+        for (int j = 0; j < fwResult[i].size(); ++j) {
+            if (fwResult[i][j] == INT_MAX) {
+                cout << "INF ";
+            } else {
+                cout << fwResult[i][j] << " ";
+            }
+        }
+        cout << endl;
+    }
+
     return 0;
 }
+/*
+Undirected Weighted Graph:
+0: (1,2) (2,4)
+1: (0,2) (3,1)
+2: (0,4) (3,3) (4,7)      
+3: (1,1) (2,3) (5,5)      
+4: (2,7) (5,2)
+5: (3,5) (4,2) (6,1)      
+6: (5,1)
+
+BFS from vertex 0: 0 1 2 3 4 5 6
+DFS (iterative) from vertex 0: 0 2 4 5 6 3 1 
+DFS (recursive) from vertex 0: 0 1 3 2 4 5 6 
+
+Undirected Weighted Graph after removing edge (2, 3):
+0: (1,2) (2,4)
+1: (0,2) (3,1)
+2: (0,4) (4,7)
+3: (1,1) (5,5)
+4: (2,7) (5,2)
+5: (3,5) (4,2) (6,1)
+6: (5,1)
+
+Directed Weighted Graph:
+0: (1,2) (2,4)
+1: (3,1)
+2: (3,3) (4,7)
+3: (5,5)
+4: (5,2)
+5:
+
+BFS from vertex 0: 0 1 2 3 4 5 
+DFS (iterative) from vertex 0: 0 2 4 5 3 1
+DFS (recursive) from vertex 0: 0 1 3 5 2 4
+
+Directed Weighted Graph after removing edge (0, 1):
+0: (2,4)
+1: (3,1)
+2: (3,3) (4,7)
+3: (5,5)
+4: (5,2)
+5:
+
+Directed Weighted Graph:
+0: (1,8) (3,1)
+1: (2,1)
+2: (0,4)
+3: (1,2) (2,9)
+
+Directed Weighted Matrix:
+0 8 INF 1
+INF 0 1 INF
+4 INF 0 INF
+INF 2 9 0
+
+Floyd-Warshall Algorithm result:
+0 3 4 1
+5 0 1 6
+4 7 0 5
+7 2 3 0
+
+*/
