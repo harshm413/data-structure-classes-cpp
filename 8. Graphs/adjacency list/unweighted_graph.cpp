@@ -142,6 +142,39 @@ public:
         return false;
     }
 
+    // Perform topological sort (only for directed graphs)
+    vector<int> topologicalSort() {
+        if (!isDirected) {
+            cout << "Topological sort is not applicable to undirected graphs." << endl;
+            return {};
+        }
+
+        if (hasCycle()) {
+            cout << "Topological sort is not possible because the graph contains a cycle." << endl;
+            return {};
+        }
+
+        vector<int> topoOrder;
+        stack<int> st;
+        set<int> visited;
+
+        // Call the recursive helper function for each vertex
+        for (const auto& pair : adjList) {
+            int vertex = pair.first;
+            if (visited.find(vertex) == visited.end()) {
+                topologicalSortUtil(vertex, visited, st);
+            }
+        }
+
+        // Collect the topological order from the stack
+        while (!st.empty()) {
+            topoOrder.push_back(st.top());
+            st.pop();
+        }
+
+        return topoOrder;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -173,6 +206,21 @@ private:
 
         recStack.erase(vertex);
         return false;
+    }
+
+    // Utility function for topological sort using DFS
+    void topologicalSortUtil(int vertex, set<int>& visited, stack<int>& st) {
+        visited.insert(vertex);
+
+        // Recur for all vertices adjacent to this vertex
+        for (int neighbor : adjList[vertex]) {
+            if (visited.find(neighbor) == visited.end()) {
+                topologicalSortUtil(neighbor, visited, st);
+            }
+        }
+
+        // Push current vertex to stack which stores the result
+        st.push(vertex);
     }
 };
 
@@ -306,6 +354,29 @@ int main() {
     cout << endl;
 
     cout << "Does the directed graph contain a cycle? " << (directedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
+    // Create a directed acyclic graph (DAG) for topological sorting
+    UnweightedGraph dag(true);
+    dag.addEdge(5, 0);
+    dag.addEdge(5, 2);
+    dag.addEdge(4, 0);
+    dag.addEdge(4, 1);
+    dag.addEdge(2, 3);
+    dag.addEdge(3, 1);
+
+    cout << "Directed Acyclic Graph (DAG):" << endl;
+    dag.display();
+
+    cout << endl;
+
+    cout << "Topological Sort: ";
+    vector<int> topoOrder = dag.topologicalSort();
+    if (!topoOrder.empty()) {
+        for (int vertex : topoOrder) {
+            cout << vertex << " ";
+        }
+        cout << endl;
+    }
 
     return 0;
 }
