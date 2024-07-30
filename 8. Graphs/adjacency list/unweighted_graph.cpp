@@ -175,6 +175,39 @@ public:
         return topoOrder;
     }
 
+    // Check if there is a path from startVertex to targetVertex and return the degree of farness
+    int isReachable(int startVertex, int targetVertex) {
+        if (startVertex == targetVertex) return 0; // Same vertex
+
+        map<int, int> distance;
+        for (const auto& pair : adjList) {
+            distance[pair.first] = INT_MAX; // Initialize all distances to infinity
+        }
+
+        queue<int> q;
+        q.push(startVertex);
+        distance[startVertex] = 0;
+
+        while (!q.empty()) {
+            int vertex = q.front();
+            q.pop();
+
+            for (int neighbor : adjList[vertex]) {
+                if (distance[neighbor] == INT_MAX) { // If neighbor has not been visited
+                    distance[neighbor] = distance[vertex] + 1;
+                    q.push(neighbor);
+
+                    // Check if we reached the target vertex
+                    if (neighbor == targetVertex) {
+                        return distance[neighbor];
+                    }
+                }
+            }
+        }
+
+        return -1; // Target vertex is not reachable
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -377,6 +410,26 @@ int main() {
         }
         cout << endl;
     }
+
+    UnweightedGraph graph(false);
+    graph.addEdge(0, 1);
+    graph.addEdge(1, 2);
+    graph.addEdge(2, 3);
+    graph.addEdge(0, 3);
+
+    cout << "Degree of farness from 0 to 3: " << graph.isReachable(0, 3) << endl;
+    cout << "Degree of farness from 1 to 3: " << graph.isReachable(1, 3) << endl;
+    cout << "Degree of farness from 3 to 1: " << graph.isReachable(3, 1) << endl;
+
+    UnweightedGraph graph2(true);
+    graph2.addEdge(0, 1);
+    graph2.addEdge(1, 2);
+    graph2.addEdge(2, 3);
+    graph2.addEdge(0, 3);
+
+    cout << "Degree of farness from 3 to 0: " << graph2.isReachable(3, 0) << endl;
+    cout << "Degree of farness from 1 to 3: " << graph2.isReachable(1, 3) << endl;
+    cout << "Degree of farness from 3 to 1: " << graph2.isReachable(3, 1) << endl;
 
     return 0;
 }
