@@ -109,6 +109,21 @@ public:
         return isDirected;
     }
 
+    // Check if the graph contains a cycle
+    bool hasCycle() {
+        vector<bool> visited(numVertices, false);
+        vector<bool> recStack(numVertices, false); // To track nodes in the current recursion stack
+
+        for (int i = 0; i < numVertices; ++i) {
+            if (!visited[i]) {
+                if (dfsCycleDetection(i, visited, recStack, -1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -120,6 +135,27 @@ private:
                 DFSRecHelper(neighbor, visited, traversal);
             }
         }
+    }
+
+    // Utility function for detecting cycles using DFS
+    bool dfsCycleDetection(int vertex, vector<bool>& visited, vector<bool>& recStack, int parent) {
+        visited[vertex] = true;
+        recStack[vertex] = true;
+
+        for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+            if (adjacencyMatrix[vertex][neighbor]) {
+                if (!visited[neighbor]) {
+                    if (dfsCycleDetection(neighbor, visited, recStack, vertex)) {
+                        return true;
+                    }
+                } else if (recStack[neighbor] && (isDirected || neighbor != parent)) {
+                    return true;
+                }
+            }
+        }
+
+        recStack[vertex] = false;
+        return false;
     }
 };
 
@@ -210,6 +246,34 @@ int main() {
 
     cout << "\nDirected Graph after removing edge (0, 1):" << endl;
     directedGraph.display();
+
+    // New undirected graph with a cycle
+    UnweightedGraphMatrix undirectedGraphForCycle(4, false);
+    undirectedGraphForCycle.addEdge(0, 1);
+    undirectedGraphForCycle.addEdge(1, 2);
+    undirectedGraphForCycle.addEdge(2, 3);
+    undirectedGraphForCycle.addEdge(2, 0);
+
+    cout << "\nUndirected Graph For Cycle Detection:" << endl;
+    undirectedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the undirected graph contain a cycle? " << (undirectedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
+    // New directed graph with a cycle
+    UnweightedGraphMatrix directedGraphForCycle(4, true);
+    directedGraphForCycle.addEdge(0, 1);
+    directedGraphForCycle.addEdge(1, 2);
+    directedGraphForCycle.addEdge(2, 3);
+    directedGraphForCycle.addEdge(3, 1);
+
+    cout << "\nDirected Graph For Cycle Detection:" << endl;
+    directedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the directed graph contain a cycle? " << (directedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
 
     return 0;
 }

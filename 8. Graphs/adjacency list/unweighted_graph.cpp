@@ -126,6 +126,22 @@ public:
         return isDirected;
     }
 
+    // Check if the graph contains a cycle
+    bool hasCycle() {
+        set<int> visited;
+        set<int> recStack;
+
+        for (const auto& pair : adjList) {
+            int vertex = pair.first;
+            if (visited.find(vertex) == visited.end()) {
+                if (dfsCycleDetection(vertex, visited, recStack, -1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -137,6 +153,26 @@ private:
                 DFSRecHelper(neighbor, visited, traversal);
             }
         }
+    }
+
+    // Utility function for detecting cycles using DFS
+    bool dfsCycleDetection(int vertex, set<int>& visited, set<int>& recStack, int parent) {
+        visited.insert(vertex);
+        recStack.insert(vertex);
+
+        for (int neighbor : adjList[vertex]) {
+            if (visited.find(neighbor) == visited.end()) {
+                if (dfsCycleDetection(neighbor, visited, recStack, vertex)) {
+                    return true;
+                }
+            } else if (recStack.find(neighbor) != recStack.end() && (isDirected || neighbor != parent)) {
+                return true;
+            }
+            
+        }
+
+        recStack.erase(vertex);
+        return false;
     }
 };
 
@@ -242,6 +278,34 @@ int main() {
 
     cout << "\nDirected Graph after removing edge (1, 2) and vertex 4:" << endl;
     directedGraph.display();
+
+    // New undirected graph with a cycle
+    UnweightedGraph undirectedGraphForCycle(false);
+    undirectedGraphForCycle.addEdge(0, 1);
+    undirectedGraphForCycle.addEdge(1, 2);
+    undirectedGraphForCycle.addEdge(2, 3);
+    //undirectedGraphForCycle.addEdge(2, 0);
+
+    cout << "\nUndirected Graph For Cycle Detection:" << endl;
+    undirectedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the undirected graph contain a cycle? " << (undirectedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
+    // New directed graph with a cycle
+    UnweightedGraph directedGraphForCycle(true);
+    directedGraphForCycle.addEdge(0, 1);
+    directedGraphForCycle.addEdge(1, 2);
+    directedGraphForCycle.addEdge(2, 3);
+    //directedGraphForCycle.addEdge(3, 1);
+
+    cout << "\nDirected Graph For Cycle Detection:" << endl;
+    directedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the directed graph contain a cycle? " << (directedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
 
     return 0;
 }

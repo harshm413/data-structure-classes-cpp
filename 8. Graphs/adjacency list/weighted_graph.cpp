@@ -303,6 +303,22 @@ public:
         return isDirected;
     }
 
+    // Check if the graph contains a cycle
+    bool hasCycle() {
+        set<int> visited;
+        set<int> recStack;
+
+        for (const auto& pair : adjList) {
+            int vertex = pair.first;
+            if (visited.find(vertex) == visited.end()) {
+                if (dfsCycleDetection(vertex, visited, recStack, -1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -315,6 +331,27 @@ private:
                 DFSRecHelper(destination, visited, traversal);
             }
         }
+    }
+
+    // Utility function for detecting cycles using DFS
+    bool dfsCycleDetection(int vertex, set<int>& visited, set<int>& recStack, int parent) {
+        visited.insert(vertex);
+        recStack.insert(vertex);
+
+        for (Edge e : adjList[vertex]) {
+            int neighbor = e.destination;
+            if (visited.find(neighbor) == visited.end()) {
+                if (dfsCycleDetection(neighbor, visited, recStack, vertex)) {
+                    return true;
+                }
+            } else if (recStack.find(neighbor) != recStack.end() && (isDirected || neighbor != parent)) {
+                return true;
+            }
+            
+        }
+
+        recStack.erase(vertex);
+        return false;
     }
 };
 
@@ -502,90 +539,35 @@ int main() {
         cout << "Vertex " << pair.first << " is at distance " << pair.second << endl;
     }
 
+    // New undirected weighted graph with a cycle
+    WeightedGraph undirectedWeightedGraphForCycle(false);
+    undirectedWeightedGraphForCycle.addEdge(0, 1, 1);
+    undirectedWeightedGraphForCycle.addEdge(1, 2, 1);
+    undirectedWeightedGraphForCycle.addEdge(2, 3, 1);
+    //undirectedWeightedGraphForCycle.addEdge(2, 0, 1);
+
+    cout << "\nUndirected Weighted Graph For Cycle Detection:" << endl;
+    undirectedWeightedGraphForCycle.display();  // Implement display method to show the graph
+
+    cout << endl;
+
+    cout << "Does the undirected weighted graph contain a cycle? " << 
+        (undirectedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
+    // New directed weighted graph with a cycle
+    WeightedGraph directedWeightedGraphForCycle(true);
+    directedWeightedGraphForCycle.addEdge(0, 1, 1);
+    directedWeightedGraphForCycle.addEdge(1, 2, 1);
+    directedWeightedGraphForCycle.addEdge(2, 3, 1);
+    //directedWeightedGraphForCycle.addEdge(3, 1, 1);
+
+    cout << "\nDirected Weighted Graph For Cycle Detection:" << endl;
+    directedWeightedGraphForCycle.display();  // Implement display method to show the graph
+
+    cout << endl;
+
+    cout << "Does the directed weighted graph contain a cycle? " << 
+        (directedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
     return 0;
 }
-
-// OUTPUT:
-// Undirected Weighted Graph:
-// 1: (2,2) (3,4)
-// 2: (1,2) (4,1)
-// 3: (1,4) (4,3) (5,7)
-// 4: (2,1) (3,3) (6,5)
-// 5: (3,7) (6,2)
-// 6: (4,5) (5,2)
-
-// BFS from vertex 1: 1 2 3 4 5 6
-// DFS (iterative) from vertex 1: 1 3 5 6 4 2 
-// DFS (recursive) from vertex 1: 1 2 4 3 5 6
-
-// Undirected Weighted Graph after removing edge (1, 2) and vertex 4:
-// 1: (3,4)
-// 2:
-// 3: (1,4) (5,7)
-// 5: (3,7) (6,2)
-// 6: (5,2)
-
-// Directed Weighted Graph:
-// 1: (2,2) (3,4)
-// 2: (4,1)
-// 3: (4,3) (5,7)
-// 4: (6,5)
-// 5: (6,2)
-// 6:
-
-// BFS from vertex 1: 1 2 3 4 5 6
-// DFS (iterative) from vertex 1: 1 3 5 6 4 2
-// DFS (recursive) from vertex 1: 1 2 4 6 3 5
-
-// Directed Weighted Graph after removing edge (1, 2) and vertex 4:
-// 1: (3,4) 
-// 2:
-// 3: (5,7)
-// 5: (6,2)
-// 6:
-
-// Undirected Weighted Graph:
-// 1: (2,7) (3,8)
-// 2: (1,7) (3,3) (4,6)
-// 3: (1,8) (2,3) (4,4) (5,3)
-// 4: (2,6) (3,4) (5,2) (6,5)
-// 5: (3,3) (4,2) (6,2)
-// 6: (4,5) (5,2)
-
-// Minimum Spanning Tree (Prim's) from vertex 1:
-// 1: (2,7)
-// 2: (1,7) (3,3)
-// 3: (2,3) (5,3)
-// 4: (5,2)
-// 5: (3,3) (4,2) (6,2) 
-// 6: (5,2)
-
-// Minimum Spanning Tree (Kruskal's):
-// 1: (2,7)
-// 2: (3,3) (1,7)
-// 3: (2,3) (5,3)
-// 4: (5,2)
-// 5: (6,2) (4,2) (3,3)
-// 6: (5,2)
-
-// Undirected Weighted Graph:
-// 0: (1,4) (4,8)
-// 1: (0,4) (4,11) (2,8)
-// 2: (1,8) (8,2) (6,4) (3,7)
-// 3: (2,7) (6,14) (7,9)
-// 4: (0,8) (1,11) (8,7) (5,1)
-// 5: (4,1) (8,6) (6,2)
-// 6: (2,4) (5,2) (3,14) (7,10)
-// 7: (3,9) (6,10)
-// 8: (4,7) (2,2) (5,6)
-
-// Shortest paths from vertex 0:
-// Vertex 0 is at distance 0
-// Vertex 1 is at distance 4
-// Vertex 2 is at distance 12
-// Vertex 3 is at distance 19
-// Vertex 4 is at distance 8
-// Vertex 5 is at distance 9
-// Vertex 6 is at distance 11
-// Vertex 7 is at distance 21
-// Vertex 8 is at distance 14

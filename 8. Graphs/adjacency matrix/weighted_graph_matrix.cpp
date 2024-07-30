@@ -149,6 +149,21 @@ public:
         return dist;
     }
 
+    // Check if the graph contains a cycle
+    bool hasCycle() {
+        vector<bool> visited(numVertices, false);
+        vector<bool> recStack(numVertices, false); // To track nodes in the current recursion stack
+
+        for (int i = 0; i < numVertices; ++i) {
+            if (!visited[i]) {
+                if (dfsCycleDetection(i, visited, recStack, -1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -160,6 +175,27 @@ private:
                 DFSRecHelper(neighbor, visited, traversal);
             }
         }
+    }
+
+    // Utility function for detecting cycles using DFS
+    bool dfsCycleDetection(int vertex, vector<bool>& visited, vector<bool>& recStack, int parent) {
+        visited[vertex] = true;
+        recStack[vertex] = true;
+
+        for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+            if (vertex != neighbor && adjacencyMatrix[vertex][neighbor] != INT_MAX) {
+                if (!visited[neighbor]) {
+                    if (dfsCycleDetection(neighbor, visited, recStack, vertex)) {
+                        return true;
+                    }
+                } else if (recStack[neighbor] && (isDirected || neighbor != parent)) {
+                    return true;
+                }
+            }
+        }
+
+        recStack[vertex] = false;
+        return false;
     }
 };
 
@@ -284,67 +320,33 @@ int main() {
         cout << endl;
     }
 
+    // New undirected weighted graph with a cycle
+    WeightedGraphMatrix undirectedWeightedGraphForCycle(4, false);
+    undirectedWeightedGraphForCycle.addEdge(0, 1, 2);
+    undirectedWeightedGraphForCycle.addEdge(1, 2, 3);
+    undirectedWeightedGraphForCycle.addEdge(2, 3, 4);
+    //undirectedWeightedGraphForCycle.addEdge(3, 0, 5);
+
+    cout << "\nUndirected Weighted Graph For Cycle Detection:" << endl;
+    undirectedWeightedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the undirected weighted graph contain a cycle? " << (undirectedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
+    // New directed weighted graph with a cycle
+    WeightedGraphMatrix directedWeightedGraphForCycle(4, true);
+    directedWeightedGraphForCycle.addEdge(0, 1, 2);
+    directedWeightedGraphForCycle.addEdge(1, 2, 3);
+    directedWeightedGraphForCycle.addEdge(2, 3, 4);
+    directedWeightedGraphForCycle.addEdge(3, 1, 5);
+
+    cout << "\nDirected Weighted Graph For Cycle Detection:" << endl;
+    directedWeightedGraphForCycle.display();
+
+    cout << endl;
+
+    cout << "Does the directed weighted graph contain a cycle? " << (directedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+
     return 0;
 }
-/*
-Undirected Weighted Graph:
-0: (1,2) (2,4)
-1: (0,2) (3,1)
-2: (0,4) (3,3) (4,7)      
-3: (1,1) (2,3) (5,5)      
-4: (2,7) (5,2)
-5: (3,5) (4,2) (6,1)      
-6: (5,1)
-
-BFS from vertex 0: 0 1 2 3 4 5 6
-DFS (iterative) from vertex 0: 0 2 4 5 6 3 1 
-DFS (recursive) from vertex 0: 0 1 3 2 4 5 6 
-
-Undirected Weighted Graph after removing edge (2, 3):
-0: (1,2) (2,4)
-1: (0,2) (3,1)
-2: (0,4) (4,7)
-3: (1,1) (5,5)
-4: (2,7) (5,2)
-5: (3,5) (4,2) (6,1)
-6: (5,1)
-
-Directed Weighted Graph:
-0: (1,2) (2,4)
-1: (3,1)
-2: (3,3) (4,7)
-3: (5,5)
-4: (5,2)
-5:
-
-BFS from vertex 0: 0 1 2 3 4 5 
-DFS (iterative) from vertex 0: 0 2 4 5 3 1
-DFS (recursive) from vertex 0: 0 1 3 5 2 4
-
-Directed Weighted Graph after removing edge (0, 1):
-0: (2,4)
-1: (3,1)
-2: (3,3) (4,7)
-3: (5,5)
-4: (5,2)
-5:
-
-Directed Weighted Graph:
-0: (1,8) (3,1)
-1: (2,1)
-2: (0,4)
-3: (1,2) (2,9)
-
-Directed Weighted Matrix:
-0 8 INF 1
-INF 0 1 INF
-4 INF 0 INF
-INF 2 9 0
-
-Floyd-Warshall Algorithm result:
-0 3 4 1
-5 0 1 6
-4 7 0 5
-7 2 3 0
-
-*/
