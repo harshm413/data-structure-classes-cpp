@@ -227,43 +227,50 @@ public:
         });
 
         // Union-Find data structure to detect cycles
-        unordered_map<int, int> parent; // To store parent of each vertex
-        unordered_map<int, int> rank;   // To store rank of each vertex (for union by rank)
+        class UnionFind {
+        public:
+            unordered_map<int, int> parent; // To store parent of each vertex
+            unordered_map<int, int> rank;   // To store rank of each vertex (for union by rank)
 
-        // Initialize parent and rank
-        for (const auto& pair : adjList) {
-            int vertex = pair.first;
-            parent[vertex] = vertex;
-            rank[vertex] = 0;
-        }
-
-        // Function to find root of a vertex (with path compression)
-        function<int(int)> findParent = [&](int vertex) {
-            if (parent[vertex] != vertex) {
-                parent[vertex] = findParent(parent[vertex]); // Path compression
-            }
-            return parent[vertex];
-        };
-
-        // Function to perform union of two sets (with union by rank)
-        auto unite = [&](int u, int v) {
-            int rootU = findParent(u);
-            int rootV = findParent(v);
-
-            if (rootU != rootV) {
-                // Union by rank
-                if (rank[rootU] > rank[rootV]) {
-                    parent[rootV] = rootU;
-                } else if (rank[rootU] < rank[rootV]) {
-                    parent[rootU] = rootV;
-                } else {
-                    parent[rootV] = rootU;
-                    rank[rootU]++;
+            // Initialize parent and rank
+            UnionFind(const map<int, list<Edge>>& adjList) {
+                for (const auto& pair : adjList) {
+                    int vertex = pair.first;
+                    parent[vertex] = vertex;
+                    rank[vertex] = 0;
                 }
-                return true; // Successfully united
             }
-            return false; // Already in the same set
+
+            // Function to find root of a vertex (with path compression)
+            int findParent(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = findParent(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            // Function to perform union of two sets (with union by rank)
+            bool unite(int u, int v) {
+                int rootU = findParent(u);
+                int rootV = findParent(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                    return true; // Successfully united
+                }
+                return false; // Already in the same set
+            }
         };
+
+        UnionFind uf(adjList);
 
         // Apply Kruskal's algorithm
         for (const auto& item : edges) {
@@ -272,13 +279,13 @@ public:
             int weight = item.second.weight;
 
             // Check if including this edge forms a cycle
-            if (findParent(u) != findParent(v)) {
+            if (uf.findParent(u) != uf.findParent(v)) {
                 // Include this edge in the MST
                 mst[u].push_back(Edge(v, weight));
                 if (!isDirected) {
                     mst[v].push_back(Edge(u, weight));
                 }
-                unite(u, v);
+                uf.unite(u, v);
             }
         }
 
@@ -350,6 +357,128 @@ public:
         }
 
         return topoOrder;
+    }
+
+    // Count connected components in the graph using Union-Find
+    int countConnectedComponents() {
+        class UnionFind {
+        private:
+            map<int, int> parent;
+            map<int, int> rank;
+
+        public:
+            UnionFind(const map<int, list<Edge>>& adjList) {
+                for (const auto& pair : adjList) {
+                    int vertex = pair.first;
+                    parent[vertex] = vertex;
+                    rank[vertex] = 0;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(adjList);
+
+        // Union all connected vertices
+        for (const auto& pair : adjList) {
+            int u = pair.first;
+            for (const Edge& edge : pair.second) {
+                int v = edge.destination;
+                uf.unite(u, v);
+            }
+        }
+
+        // Count unique components
+        set<int> components;
+        for (const auto& pair : adjList) {
+            int vertex = pair.first;
+            components.insert(uf.find(vertex));
+        }
+
+        return components.size();
+    }
+
+    // Check if the graph contains a cycle using Union-Find
+    bool hasCycleUF() {
+        class UnionFind {
+        private:
+            map<int, int> parent;
+            map<int, int> rank;
+
+        public:
+            UnionFind(const map<int, list<Edge>>& adjList) {
+                for (const auto& pair : adjList) {
+                    int vertex = pair.first;
+                    parent[vertex] = vertex;
+                    rank[vertex] = 0;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(adjList);
+
+        // To detect cycles, we iterate through all edges
+        for (const auto& pair : adjList) {
+            int u = pair.first;
+            for (const Edge& edge : pair.second) {
+                int v = edge.destination;
+                if (isDirected || u < v) {  // Only consider each edge once
+                    if (uf.find(u) == uf.find(v)) {
+                        return true; // Cycle detected
+                    }
+                    uf.unite(u, v);
+                }
+            }
+        }
+
+        return false;
     }
 
 private:
@@ -592,7 +721,7 @@ int main() {
     undirectedWeightedGraphForCycle.addEdge(0, 1, 1);
     undirectedWeightedGraphForCycle.addEdge(1, 2, 1);
     undirectedWeightedGraphForCycle.addEdge(2, 3, 1);
-    //undirectedWeightedGraphForCycle.addEdge(2, 0, 1);
+    undirectedWeightedGraphForCycle.addEdge(2, 0, 1);
 
     cout << "\nUndirected Weighted Graph For Cycle Detection:" << endl;
     undirectedWeightedGraphForCycle.display();  // Implement display method to show the graph
@@ -601,6 +730,8 @@ int main() {
 
     cout << "Does the undirected weighted graph contain a cycle? " << 
         (undirectedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the undirected weighted graph contain a cycle?(UnionFind Method) " << 
+        (undirectedWeightedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // New directed weighted graph with a cycle
     WeightedGraph directedWeightedGraphForCycle(true);
@@ -616,6 +747,8 @@ int main() {
 
     cout << "Does the directed weighted graph contain a cycle? " << 
         (directedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the directed weighted graph contain a cycle?(UnionFind Method) " << 
+        (directedWeightedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // Create a directed acyclic graph (DAG) for topological sorting
     WeightedGraph dag(true);
@@ -640,5 +773,138 @@ int main() {
         cout << endl;
     }
 
+    WeightedGraph graphC1(false); // Undirected graph
+
+    graphC1.addEdge(0, 1, 1);
+    graphC1.addEdge(1, 2, 1);
+    graphC1.addEdge(2, 3, 1);
+    graphC1.addEdge(0, 3, 1);
+    graphC1.addEdge(4, 5, 1);
+    graphC1.addEdge(6, 5, 1);
+
+    cout << "Number of connected components: " << graphC1.countConnectedComponents() << endl;
+
+    WeightedGraph graphC2(true); // Directed graph
+
+    graphC2.addEdge(0, 1, 1);
+    graphC2.addEdge(1, 2, 1);
+    graphC2.addEdge(2, 3, 1);
+    graphC2.addEdge(0, 3, 1);
+    graphC2.addEdge(4, 5, 1);
+    graphC2.addEdge(5, 6, 1);
+
+    cout << "Number of connected components in directed graph: " << graphC2.countConnectedComponents() << endl;
+
     return 0;
 }
+
+/*
+Undirected Weighted Graph:
+1: (2,2) (3,4)
+2: (1,2) (4,1)
+3: (1,4) (4,3) (5,7)
+4: (2,1) (3,3) (6,5)
+5: (3,7) (6,2)
+6: (4,5) (5,2)
+
+BFS from vertex 1: 1 2 3 4 5 6
+DFS (iterative) from vertex 1: 1 3 5 6 4 2    
+DFS (recursive) from vertex 1: 1 2 4 3 5 6    
+
+Undirected Weighted Graph after removing edge 
+(1, 2) and vertex 4:
+1: (3,4)
+2:
+3: (1,4) (5,7)
+5: (3,7) (6,2)
+6: (5,2)
+
+Directed Weighted Graph:
+1: (2,2) (3,4)
+2: (4,1)
+3: (4,3) (5,7)
+4: (6,5)
+5: (6,2)
+6:
+
+BFS from vertex 1: 1 2 3 4 5 6
+DFS (iterative) from vertex 1: 1 3 5 6 4 2    
+DFS (recursive) from vertex 1: 1 2 4 6 3 5    
+
+Directed Weighted Graph after removing edge (1, 2) and vertex 4:
+1: (3,4)
+2:
+3: (5,7)
+5: (6,2)
+6:
+
+Undirected Weighted Graph:
+1: (2,7) (3,8)
+2: (1,7) (3,3) (4,6)
+3: (1,8) (2,3) (4,4) (5,3)
+4: (2,6) (3,4) (5,2) (6,5)
+5: (3,3) (4,2) (6,2)
+6: (4,5) (5,2)
+
+Minimum Spanning Tree (Prim's) from vertex 1: 
+1: (2,7)
+2: (1,7) (3,3)
+3: (2,3) (5,3)
+4: (5,2)
+5: (3,3) (4,2) (6,2)
+6: (5,2)
+
+Minimum Spanning Tree (Kruskal's):
+1: (2,7)
+2: (3,3) (1,7)
+3: (2,3) (5,3)
+4: (5,2)
+5: (6,2) (4,2) (3,3)
+6: (5,2)
+
+Undirected Weighted Graph:
+0: (1,4) (4,8)
+1: (0,4) (4,11) (2,8)
+2: (1,8) (8,2) (6,4) (3,7)
+3: (2,7) (6,14) (7,9)
+4: (0,8) (1,11) (8,7) (5,1)
+5: (4,1) (8,6) (6,2)
+6: (2,4) (5,2) (3,14) (7,10)
+7: (3,9) (6,10)
+8: (4,7) (2,2) (5,6)
+
+Shortest paths from vertex 0:
+Vertex 0 is at distance 0
+Vertex 1 is at distance 4
+Vertex 2 is at distance 12
+Vertex 3 is at distance 19
+Vertex 4 is at distance 8
+Vertex 5 is at distance 9
+Vertex 6 is at distance 11
+Vertex 7 is at distance 21
+Vertex 8 is at distance 14
+
+Undirected Weighted Graph For Cycle Detection:0: (1,1)
+1: (0,1) (2,1)
+2: (1,1) (3,1)
+3: (2,1)
+
+Does the undirected weighted graph contain a cycle? No
+
+Directed Weighted Graph For Cycle Detection:  
+0: (1,1) 
+1: (2,1)
+2: (3,1)
+3:
+
+Does the directed weighted graph contain a cycle? No
+Directed Acyclic Graph (DAG):
+0:
+1:
+2: (3,1)
+3: (1,2)
+4: (0,2) (1,2)
+5: (0,3) (2,1)
+
+Topological Sort: 5 4 2 3 1 0
+*/

@@ -189,6 +189,125 @@ public:
         return -1;
     }
 
+    // Count connected components in the graph using Union-Find
+    int countConnectedComponents() {
+        class UnionFind {
+        private:
+            vector<int> parent;
+            vector<int> rank;
+
+        public:
+            UnionFind(int n) {
+                parent.resize(n);
+                rank.resize(n, 0);
+                for (int i = 0; i < n; ++i) {
+                    parent[i] = i;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(numVertices);
+
+        // Union all connected vertices according to the adjacency matrix
+        for (int u = 0; u < numVertices; ++u) {
+            for (int v = 0; v < numVertices; ++v) {
+                if (adjacencyMatrix[u][v]) {
+                    uf.unite(u, v);
+                }
+            }
+        }
+
+        // Count unique components
+        set<int> components;
+        for (int i = 0; i < numVertices; ++i) {
+            components.insert(uf.find(i));
+        }
+
+        return components.size();
+    }
+
+    // Check if the graph contains a cycle using Union-Find
+    bool hasCycleUF() {
+        class UnionFind {
+        private:
+            vector<int> parent;
+            vector<int> rank;
+
+        public:
+            UnionFind(int n) : parent(n), rank(n, 0) {
+                for (int i = 0; i < n; ++i) {
+                    parent[i] = i;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(numVertices);
+
+        // Iterate through the adjacency matrix and apply Union-Find
+        for (int u = 0; u < numVertices; ++u) {
+            for (int v = 0; v < numVertices; ++v) {
+                if (adjacencyMatrix[u][v]) {
+                    if (isDirected || u < v) {  // Only consider each edge once
+                        if (uf.find(u) == uf.find(v)) {
+                            return true; // Cycle detected
+                        }
+                        uf.unite(u, v);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -332,7 +451,7 @@ int main() {
     undirectedGraphForCycle.addEdge(0, 1);
     undirectedGraphForCycle.addEdge(1, 2);
     undirectedGraphForCycle.addEdge(2, 3);
-    undirectedGraphForCycle.addEdge(2, 0);
+    //undirectedGraphForCycle.addEdge(2, 0);
 
     cout << "\nUndirected Graph For Cycle Detection:" << endl;
     undirectedGraphForCycle.display();
@@ -340,13 +459,14 @@ int main() {
     cout << endl;
 
     cout << "Does the undirected graph contain a cycle? " << (undirectedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the undirected graph contain a cycle?(UnionFind Method) " << (undirectedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // New directed graph with a cycle
     UnweightedGraphMatrix directedGraphForCycle(4, true);
     directedGraphForCycle.addEdge(0, 1);
     directedGraphForCycle.addEdge(1, 2);
     directedGraphForCycle.addEdge(2, 3);
-    directedGraphForCycle.addEdge(3, 1);
+    //directedGraphForCycle.addEdge(3, 1);
 
     cout << "\nDirected Graph For Cycle Detection:" << endl;
     directedGraphForCycle.display();
@@ -354,6 +474,7 @@ int main() {
     cout << endl;
 
     cout << "Does the directed graph contain a cycle? " << (directedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the directed graph contain a cycle?(UnionFind Method) " << (directedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // Topological Sort on DAG
     UnweightedGraphMatrix dag(6, true);
@@ -398,5 +519,27 @@ int main() {
     cout << "Degree of farness from 1 to 3: " << graph2.isReachable(1, 3) << endl;
     cout << "Degree of farness from 3 to 1: " << graph2.isReachable(3, 1) << endl;
     
+    UnweightedGraphMatrix graphC1(8, false); // Undirected graph
+
+    graphC1.addEdge(0, 1);
+    graphC1.addEdge(1, 2);
+    graphC1.addEdge(2, 3);
+    graphC1.addEdge(0, 3);
+    graphC1.addEdge(4, 5);
+    graphC1.addEdge(6, 7);
+
+    cout << "Number of connected components: " << graphC1.countConnectedComponents() << endl;
+
+    UnweightedGraphMatrix graphC2(7, true); // Directed graph
+
+    graphC2.addEdge(0, 1);
+    graphC2.addEdge(1, 2);
+    graphC2.addEdge(2, 3);
+    graphC2.addEdge(0, 3);
+    graphC2.addEdge(4, 5);
+    graphC2.addEdge(5, 6);
+
+    cout << "Number of connected components in directed graph: " << graphC2.countConnectedComponents() << endl;
+
     return 0;
 }

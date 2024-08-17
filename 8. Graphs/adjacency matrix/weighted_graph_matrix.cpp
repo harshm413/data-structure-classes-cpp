@@ -196,6 +196,124 @@ public:
         return topoOrder;
     }
 
+    // Count connected components in the graph using Union-Find
+    int countConnectedComponents() {
+        class UnionFind {
+        private:
+            vector<int> parent;
+            vector<int> rank;
+
+        public:
+            UnionFind(int n) {
+                parent.resize(n);
+                rank.resize(n, 0);
+                for (int i = 0; i < n; ++i) {
+                    parent[i] = i;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(numVertices);
+
+        // Union all connected vertices according to the adjacency matrix
+        for (int u = 0; u < numVertices; ++u) {
+            for (int v = 0; v < numVertices; ++v) {
+                if (adjacencyMatrix[u][v] != INT_MAX) { // There's an edge
+                    uf.unite(u, v);
+                }
+            }
+        }
+
+        // Count unique components
+        set<int> components;
+        for (int i = 0; i < numVertices; ++i) {
+            components.insert(uf.find(i));
+        }
+
+        return components.size();
+    }
+
+    // Check if the graph contains a cycle using Union-Find
+    bool hasCycleUF() {
+        class UnionFind {
+        private:
+            vector<int> parent;
+            vector<int> rank;
+
+        public:
+            UnionFind(int n) : parent(n), rank(n, 0) {
+                for (int i = 0; i < n; ++i) {
+                    parent[i] = i;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(numVertices);
+
+        for (int u = 0; u < numVertices; ++u) {
+            for (int v = 0; v < numVertices; ++v) {
+                if (u != v && adjacencyMatrix[u][v] != INT_MAX) {
+                    if (isDirected || u < v) {  // Only consider each edge once
+                        if (uf.find(u) == uf.find(v)) {
+                            return true; // Cycle detected
+                        }
+                        uf.unite(u, v);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -372,7 +490,7 @@ int main() {
     undirectedWeightedGraphForCycle.addEdge(0, 1, 2);
     undirectedWeightedGraphForCycle.addEdge(1, 2, 3);
     undirectedWeightedGraphForCycle.addEdge(2, 3, 4);
-    //undirectedWeightedGraphForCycle.addEdge(3, 0, 5);
+    undirectedWeightedGraphForCycle.addEdge(3, 0, 5);
 
     cout << "\nUndirected Weighted Graph For Cycle Detection:" << endl;
     undirectedWeightedGraphForCycle.display();
@@ -380,6 +498,7 @@ int main() {
     cout << endl;
 
     cout << "Does the undirected weighted graph contain a cycle? " << (undirectedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the undirected weighted graph contain a cycle?(UnionFind Method) " << (undirectedWeightedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // New directed weighted graph with a cycle
     WeightedGraphMatrix directedWeightedGraphForCycle(4, true);
@@ -394,6 +513,7 @@ int main() {
     cout << endl;
 
     cout << "Does the directed weighted graph contain a cycle? " << (directedWeightedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the directed weighted graph contain a cycle?(UnionFind Method) " << (directedWeightedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // Topological Sort on DAG using WeightedGraphMatrix
     WeightedGraphMatrix dag(6, true);
@@ -417,6 +537,28 @@ int main() {
         }
         cout << endl;
     }
+
+    WeightedGraphMatrix graphC1(8, false); // Undirected graph
+
+    graphC1.addEdge(0, 1, 10);
+    graphC1.addEdge(1, 2, 20);
+    graphC1.addEdge(2, 3, 30);
+    graphC1.addEdge(0, 3, 40);
+    graphC1.addEdge(4, 5, 50);
+    graphC1.addEdge(6, 7, 60);
+
+    cout << "Number of connected components: " << graphC1.countConnectedComponents() << endl;
+
+    WeightedGraphMatrix graphC2(7, true); // Directed graph
+
+    graphC2.addEdge(0, 1, 10);
+    graphC2.addEdge(1, 2, 20);
+    graphC2.addEdge(2, 3, 30);
+    graphC2.addEdge(0, 3, 40);
+    graphC2.addEdge(4, 5, 50);
+    graphC2.addEdge(5, 6, 60);
+
+    cout << "Number of connected components in directed graph: " << graphC2.countConnectedComponents() << endl;
     
     return 0;
 }

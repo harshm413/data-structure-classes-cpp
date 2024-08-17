@@ -208,6 +208,126 @@ public:
         return -1; // Target vertex is not reachable
     }
 
+    // Count connected components in the graph using Union-Find
+    int countConnectedComponents() {
+        // Union-Find data structure
+        class UnionFind {
+        private:
+            map<int, int> parent;
+            map<int, int> rank;
+
+        public:
+            UnionFind(const map<int, list<int>>& adjList) {
+                for (const auto& pair : adjList) {
+                    int vertex = pair.first;
+                    parent[vertex] = vertex;
+                    rank[vertex] = 0;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(adjList);
+
+        // Union all connected vertices
+        for (const auto& pair : adjList) {
+            int u = pair.first;
+            for (int v : pair.second) {
+                uf.unite(u, v);
+            }
+        }
+
+        // Count unique components
+        set<int> components;
+        for (const auto& pair : adjList) {
+            int vertex = pair.first;
+            components.insert(uf.find(vertex));
+        }
+
+        return components.size();
+    }
+
+    // Check if the graph contains a cycle using Union-Find
+    bool hasCycleUF() {
+        class UnionFind {
+        private:
+            map<int, int> parent;
+            map<int, int> rank;
+
+        public:
+            UnionFind(const map<int, list<int>>& adjList) {
+                for (const auto& pair : adjList) {
+                    int vertex = pair.first;
+                    parent[vertex] = vertex;
+                    rank[vertex] = 0;
+                }
+            }
+
+            int find(int vertex) {
+                if (parent[vertex] != vertex) {
+                    parent[vertex] = find(parent[vertex]); // Path compression
+                }
+                return parent[vertex];
+            }
+
+            void unite(int u, int v) {
+                int rootU = find(u);
+                int rootV = find(v);
+
+                if (rootU != rootV) {
+                    // Union by rank
+                    if (rank[rootU] > rank[rootV]) {
+                        parent[rootV] = rootU;
+                    } else if (rank[rootU] < rank[rootV]) {
+                        parent[rootU] = rootV;
+                    } else {
+                        parent[rootV] = rootU;
+                        rank[rootU]++;
+                    }
+                }
+            }
+        };
+
+        UnionFind uf(adjList);
+
+        for (const auto& pair : adjList) {
+            int u = pair.first;
+            for (int v : pair.second) {
+                if (isDirected || u < v) {  // Only consider each edge once
+                    if (uf.find(u) == uf.find(v)) {
+                        return true; // Cycle detected
+                    }
+                    uf.unite(u, v);
+                }
+            }
+        }
+
+        return false;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -373,13 +493,14 @@ int main() {
     cout << endl;
 
     cout << "Does the undirected graph contain a cycle? " << (undirectedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the undirected graph contain a cycle?(UnionFind Method) " << (undirectedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // New directed graph with a cycle
     UnweightedGraph directedGraphForCycle(true);
     directedGraphForCycle.addEdge(0, 1);
     directedGraphForCycle.addEdge(1, 2);
     directedGraphForCycle.addEdge(2, 3);
-    //directedGraphForCycle.addEdge(3, 1);
+    directedGraphForCycle.addEdge(3, 1);
 
     cout << "\nDirected Graph For Cycle Detection:" << endl;
     directedGraphForCycle.display();
@@ -387,6 +508,7 @@ int main() {
     cout << endl;
 
     cout << "Does the directed graph contain a cycle? " << (directedGraphForCycle.hasCycle() ? "Yes" : "No") << endl;
+    cout << "Does the directed graph contain a cycle?(UnionFind Method) " << (directedGraphForCycle.hasCycleUF() ? "Yes" : "No") << endl;
 
     // Create a directed acyclic graph (DAG) for topological sorting
     UnweightedGraph dag(true);
@@ -430,6 +552,26 @@ int main() {
     cout << "Degree of farness from 3 to 0: " << graph2.isReachable(3, 0) << endl;
     cout << "Degree of farness from 1 to 3: " << graph2.isReachable(1, 3) << endl;
     cout << "Degree of farness from 3 to 1: " << graph2.isReachable(3, 1) << endl;
+
+    UnweightedGraph graphC1(false);
+    graphC1.addEdge(0, 1);
+    graphC1.addEdge(1, 2);
+    graphC1.addEdge(2, 3);
+    graphC1.addEdge(0, 3);
+    graphC1.addEdge(4, 5);
+    graphC1.addEdge(6, 7);
+
+    cout << "Number of connected components: " << graphC1.countConnectedComponents() << endl;
+
+    UnweightedGraph graphC2(true);
+    graphC2.addEdge(0, 1);
+    graphC2.addEdge(1, 2);
+    graphC2.addEdge(2, 3);
+    graphC2.addEdge(0, 3);
+    graphC2.addEdge(4, 5);
+    graphC2.addEdge(5, 6);
+
+    cout << "Number of connected components in directed graph: " << graphC2.countConnectedComponents() << endl;
 
     return 0;
 }
