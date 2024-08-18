@@ -308,6 +308,39 @@ public:
         return false;
     }
 
+    // Method to check if the graph is bipartite
+    bool isBipartite() {
+        vector<int> color(numVertices, -1); // -1 indicates uncolored, 0 and 1 are the two colors
+
+        for (int start = 0; start < numVertices; ++start) {
+            if (color[start] == -1) {
+                // Start BFS from this vertex
+                queue<int> q;
+                q.push(start);
+                color[start] = 0; // Start coloring with color 0
+
+                while (!q.empty()) {
+                    int current = q.front();
+                    q.pop();
+
+                    for (int neighbor = 0; neighbor < numVertices; ++neighbor) {
+                        if (adjacencyMatrix[current][neighbor]) {
+                            if (color[neighbor] == -1) {
+                                // Color with opposite color
+                                color[neighbor] = 1 - color[current];
+                                q.push(neighbor);
+                            } else if (color[neighbor] == color[current]) {
+                                // Found a conflict
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
 private:
     // Utility function for recursive DFS
     void DFSRecHelper(int vertex, set<int>& visited, vector<int>& traversal) {
@@ -540,6 +573,43 @@ int main() {
     graphC2.addEdge(5, 6);
 
     cout << "Number of connected components in directed graph: " << graphC2.countConnectedComponents() << endl;
+
+    // Create a bipartite graph with 8 vertices (4 in each set)
+    UnweightedGraphMatrix bipartiteGraph(8, false);  // false indicates an undirected graph
+
+    // Add edges to the graph to make it bipartite
+    bipartiteGraph.addEdge(0, 4);
+    bipartiteGraph.addEdge(0, 5);
+    bipartiteGraph.addEdge(1, 4);
+    bipartiteGraph.addEdge(1, 6);
+    bipartiteGraph.addEdge(2, 5);
+    bipartiteGraph.addEdge(2, 7);
+    bipartiteGraph.addEdge(3, 6);
+    bipartiteGraph.addEdge(3, 7);
+
+    // Test bipartiteness
+    if (bipartiteGraph.isBipartite()) {
+        cout << "The graph is bipartite." << endl;
+    } else {
+        cout << "The graph is not bipartite." << endl;
+    }
+
+    // Create a non-bipartite graph with 5 vertices
+    UnweightedGraphMatrix nonBipartiteGraph(5, false);  // false indicates an undirected graph
+
+    // Add edges to the graph to make it non-bipartite
+    nonBipartiteGraph.addEdge(0, 1);
+    nonBipartiteGraph.addEdge(1, 2);
+    nonBipartiteGraph.addEdge(2, 3);
+    nonBipartiteGraph.addEdge(3, 4);
+    nonBipartiteGraph.addEdge(4, 0);
+    
+    // Test bipartiteness
+    if (nonBipartiteGraph.isBipartite()) {
+        cout << "The graph is bipartite." << endl;
+    } else {
+        cout << "The graph is not bipartite." << endl;
+    }
 
     return 0;
 }
